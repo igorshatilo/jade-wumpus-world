@@ -1,0 +1,6 @@
+out
+*.txt
+*.class
+.idea
+*.jar
+.DS_Store
