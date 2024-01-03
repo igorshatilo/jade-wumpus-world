@@ -29,7 +29,36 @@ public class SpeleologistAgent extends Agent {
         speech = new SpeleologistSpeech();
         register();
         System.out.println("Speleologist-agent " + getAID().getName() + " is ready.");
+        searchEnvironmentAndNavigator();
+    }
 
+    @Override
+    protected void takeDown() {
+        System.out.println("Speleologist-agent " + getAID().getName() + " terminating.");
+        try {
+            getContainerController().getAgent(navigatorAid.getLocalName()).kill();
+            getContainerController().getAgent(environmentAid.getLocalName()).kill();
+        } catch (ControllerException e) {
+            throw new RuntimeException(e);
+        }
+        System.exit(0);
+    }
+
+    private void register() {
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("speleologist");
+        sd.setName("wumpus-world");
+        dfd.addServices(sd);
+        try {
+            DFService.register(this, dfd);
+        } catch (FIPAException fe) {
+            fe.printStackTrace();
+        }
+    }
+
+    private void searchEnvironmentAndNavigator() {
         // Search environment
         addBehaviour(new TickerBehaviour(this, 1000) {
             @Override
@@ -86,32 +115,6 @@ public class SpeleologistAgent extends Agent {
                 }
             }
         });
-    }
-
-    @Override
-    protected void takeDown() {
-        System.out.println("Speleologist-agent " + getAID().getName() + " terminating.");
-        try {
-            getContainerController().getAgent(navigatorAid.getLocalName()).kill();
-            getContainerController().getAgent(environmentAid.getLocalName()).kill();
-        } catch (ControllerException e) {
-            throw new RuntimeException(e);
-        }
-        System.exit(0);
-    }
-
-    private void register() {
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("speleologist");
-        sd.setName("wumpus-world");
-        dfd.addServices(sd);
-        try {
-            DFService.register(this, dfd);
-        } catch (FIPAException fe) {
-            fe.printStackTrace();
-        }
     }
 
     private void println(String msg) {

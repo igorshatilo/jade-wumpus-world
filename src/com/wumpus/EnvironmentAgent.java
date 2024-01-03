@@ -37,16 +37,41 @@ public class EnvironmentAgent extends Agent {
     @Override
     protected void setup() {
         register();
-        WumpusCave cave = new WumpusCave(4, 4, ""
-                + ". . . P "
-                + "W G P . "
-                + ". . . . "
-                + "S . P . ");
-        wumpusEnvironment = new WumpusEnvironment(cave);
-        speleologist = new EfficientHybridWumpusAgent(4, 4, new AgentPosition(1, 1, AgentPosition.Orientation.FACING_NORTH));
-        percept = new WumpusPercept();
-        wumpusEnvironment.addAgent(speleologist);
+        initializeEnvironment();
+        searchSpeleologist();
+    }
 
+    private void register() {
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("environment");
+        sd.setName("wumpus-world");
+        dfd.addServices(sd);
+        try {
+            DFService.register(this, dfd);
+        } catch (FIPAException fe) {
+            fe.printStackTrace();
+        }
+    }
+
+    private void initializeEnvironment() {
+        Object[] args = getArguments();
+
+        if (args != null && args.length > 0) {
+            String caveConfig = (String) args[0];
+            WumpusCave cave = new WumpusCave(4, 4, caveConfig);
+            wumpusEnvironment = new WumpusEnvironment(cave);
+            speleologist = new EfficientHybridWumpusAgent(4, 4, new AgentPosition(1, 1, AgentPosition.Orientation.FACING_NORTH));
+            percept = new WumpusPercept();
+            wumpusEnvironment.addAgent(speleologist);
+        } else {
+            System.out.println("No cave configuration specified");
+            doDelete();
+        }
+    }
+
+    private void searchSpeleologist() {
         addBehaviour(new TickerBehaviour(this, 1000) {
             @Override
             protected void onTick() {
@@ -73,27 +98,12 @@ public class EnvironmentAgent extends Agent {
         });
     }
 
-    private void register() {
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("environment");
-        sd.setName("wumpus-world");
-        dfd.addServices(sd);
-        try {
-            DFService.register(this, dfd);
-        } catch (FIPAException fe) {
-            fe.printStackTrace();
-        }
-    }
-
     private void println(String msg) {
         System.out.println(ConsoleColors.GREEN + "Environment: " + ConsoleColors.RESET + msg);
     }
 
     private class ListenBehavior extends CyclicBehaviour {
         public void action() {
-            //query - propose
             MessageTemplate mt = MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.REQUEST), MessageTemplate.MatchPerformative(ACLMessage.CFP));
             ACLMessage msg = myAgent.receive(mt);
             if (msg != null) {

@@ -32,7 +32,27 @@ public class NavigatorAgent extends Agent {
         agent = new EfficientHybridWumpusAgent(4, 4, new AgentPosition(1, 1, AgentPosition.Orientation.FACING_NORTH));
         speech = new NavigatorSpeech();
         register();
+        searchSpeleologist();
 
+        System.out.println("Navigator-agent " + getAID().getName() + " is ready.");
+        addBehaviour(new ListenBehavior());
+    }
+
+    private void register() {
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("navigator");
+        sd.setName("wumpus-world");
+        dfd.addServices(sd);
+        try {
+            DFService.register(this, dfd);
+        } catch (FIPAException fe) {
+            fe.printStackTrace();
+        }
+    }
+
+    private void searchSpeleologist() {
         addBehaviour(new TickerBehaviour(this, 1000) {
             @Override
             protected void onTick() {
@@ -53,23 +73,6 @@ public class NavigatorAgent extends Agent {
                 }
             }
         });
-
-        System.out.println("Navigator-agent " + getAID().getName() + " is ready.");
-        addBehaviour(new ListenBehavior());
-    }
-
-    private void register() {
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("navigator");
-        sd.setName("wumpus-world");
-        dfd.addServices(sd);
-        try {
-            DFService.register(this, dfd);
-        } catch (FIPAException fe) {
-            fe.printStackTrace();
-        }
     }
 
     private void println(String msg) {
@@ -79,7 +82,6 @@ public class NavigatorAgent extends Agent {
     private class ListenBehavior extends CyclicBehaviour {
         @Override
         public void action() {
-            //query - propose
             MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
             ACLMessage msg = myAgent.receive(mt);
             if (msg != null) {
@@ -107,7 +109,6 @@ public class NavigatorAgent extends Agent {
             println("Decided on action: " + action);
             String actionSentence = speech.tellAction(action);
             reply.setLanguage("English");
-            reply.setOntology("WumpusWorld");
             reply.setContent(actionSentence);
             reply.addReplyTo(speleologistAid);
             reply.addReceiver(speleologistAid);
